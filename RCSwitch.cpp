@@ -314,7 +314,7 @@ char* RCSwitch::getCodeWordC(char sFamily, int nGroup, int nDevice, boolean bSta
     return '\0';
   }
   
-  char* sDeviceGroupCode =  dec2binWzerofill(  (nDevice-1) + (nGroup-1)*4, 4  );
+  char* sDeviceGroupCode = dec2binWzerofill(  (nDevice-1) + (nGroup-1)*4, 4  );
   char familycode[16][5] = { "0000", "F000", "0F00", "FF00", "00F0", "F0F0", "0FF0", "FFF0", "000F", "F00F", "0F0F", "FF0F", "00FF", "F0FF", "0FFF", "FFFF" };
   for (int i = 0; i<4; i++) {
     sReturn[nReturnPos++] = familycode[ (int)sFamily - 97 ][i];
@@ -626,8 +626,8 @@ unsigned int* RCSwitch::getReceivedRawdata() {
 /**
  *
  */
-bool RCSwitch::receiveProtocol1(unsigned int changeCount){
-    
+bool RCSwitch::receiveProtocol1(unsigned int changeCount) {
+#ifndef DISABLE_PROTOCOL1
       unsigned long code = 0;
       unsigned long delay = RCSwitch::timings[0] / 31;
       unsigned long delayTolerance = delay * RCSwitch::nReceiveTolerance * 0.01;    
@@ -658,12 +658,13 @@ bool RCSwitch::receiveProtocol1(unsigned int changeCount){
     }else if (code != 0){
         return true;
     }
-    
-
+#else
+	return false;
+#endif
 }
 
-bool RCSwitch::receiveProtocol2(unsigned int changeCount){
-    
+bool RCSwitch::receiveProtocol2(unsigned int changeCount) {
+#ifndef DISABLE_PROTOCOL2
       unsigned long code = 0;
       unsigned long delay = RCSwitch::timings[0] / 10;
       unsigned long delayTolerance = delay * RCSwitch::nReceiveTolerance * 0.01;    
@@ -694,14 +695,16 @@ bool RCSwitch::receiveProtocol2(unsigned int changeCount){
     }else if (code != 0){
         return true;
     }
-
+#else
+	return false;
+#endif
 }
 
 /** Protocol 3 is used by BL35P02.
  *
  */
-bool RCSwitch::receiveProtocol3(unsigned int changeCount){
-    
+bool RCSwitch::receiveProtocol3(unsigned int changeCount) {
+#ifndef DISABLE_PROTOCOL3
       unsigned long code = 0;
       unsigned long delay = RCSwitch::timings[0] / PROTOCOL3_SYNC_FACTOR;
       unsigned long delayTolerance = delay * RCSwitch::nReceiveTolerance * 0.01;    
@@ -738,6 +741,9 @@ bool RCSwitch::receiveProtocol3(unsigned int changeCount){
       }else if (code != 0){
         return true;
       }
+#else
+	return false;
+#endif
 }
 
 void RCSwitch::handleInterrupt() {
@@ -755,9 +761,9 @@ void RCSwitch::handleInterrupt() {
     repeatCount++;
     changeCount--;
     if (repeatCount == 2) {
-      if (receiveProtocol1(changeCount) == false){
-        if (receiveProtocol2(changeCount) == false){
-          if (receiveProtocol3(changeCount) == false){
+      if (receiveProtocol1(changeCount) == false) {
+        if (receiveProtocol2(changeCount) == false) {
+          if (receiveProtocol3(changeCount) == false) {
             //failed
           }
         }
@@ -780,11 +786,11 @@ void RCSwitch::handleInterrupt() {
 /**
   * Turns a decimal value to its binary representation
   */
-char* RCSwitch::dec2binWzerofill(unsigned long Dec, unsigned int bitLength){
+char* RCSwitch::dec2binWzerofill(unsigned long Dec, unsigned int bitLength) {
     return dec2binWcharfill(Dec, bitLength, '0');
 }
 
-char* RCSwitch::dec2binWcharfill(unsigned long Dec, unsigned int bitLength, char fill){
+char* RCSwitch::dec2binWcharfill(unsigned long Dec, unsigned int bitLength, char fill) {
   static char bin[64];
   unsigned int i=0;
 

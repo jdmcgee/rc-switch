@@ -36,6 +36,11 @@
     #include "WProgram.h"
 #endif
 
+// Uncomment to disable protocol decoding to save some memory
+//#define DISABLE_PROTOCOL1
+//#define DISABLE_PROTOCOL2
+//#define DISABLE_PROTOCOL3
+
 // Number of maximum High/Low changes per packet.
 // We can handle up to (unsigned long) => 32 bit * 2 H/L changes per bit + 2 for sync
 #define RCSWITCH_MAX_CHANGES 67

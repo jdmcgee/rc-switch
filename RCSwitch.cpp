@@ -748,7 +748,7 @@ void RCSwitch::handleInterrupt() {
   static unsigned int repeatCount;
   
 
-  long time = micros();
+  unsigned long time = micros();
   duration = time - lastTime;
  
   if (duration > 5000 && duration > RCSwitch::timings[0] - 200 && duration < RCSwitch::timings[0] + 200) {

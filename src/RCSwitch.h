@@ -51,6 +51,63 @@
 #define PROTOCOL3_1_HIGH_CYCLES  9
 #define PROTOCOL3_1_LOW_CYCLES   6
 
+// Direct I/O through registers and bitmask (from OneWire library)
+#if defined(__AVR__)
+#define PIN_TO_BASEREG(pin)             (portInputRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint8_t
+#define DIRECT_READ(base, mask)         (((*(base)) & (mask)) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+1)) &= ~(mask), (*((base)+2)) &= ~(mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+1)) |= (mask))
+#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+2)) &= ~(mask))
+#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+2)) |= (mask))
+
+#elif defined(__MK20DX128__) || defined(__MK20DX256__)
+#define PIN_TO_BASEREG(pin)             (portOutputRegister(pin))
+#define PIN_TO_BITMASK(pin)             (1)
+#define IO_REG_TYPE uint8_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (*((base)+512))
+#define DIRECT_MODE_INPUT(base, mask)   (*((base)+640) = 0)
+#define DIRECT_MODE_OUTPUT(base, mask)  (*((base)+640) = 1)
+#define DIRECT_WRITE_LOW(base, mask)    (*((base)+256) = 1)
+#define DIRECT_WRITE_HIGH(base, mask)   (*((base)+128) = 1)
+
+#elif defined(__SAM3X8E__)
+#define PIN_TO_BASEREG(pin)             (&(digitalPinToPort(pin)->PIO_PER))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*((base)+15)) & (mask)) ? 1 : 0)
+#define DIRECT_MODE_INPUT(base, mask)   ((*((base)+5)) = (mask))
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*((base)+4)) = (mask))
+#define DIRECT_WRITE_LOW(base, mask)    ((*((base)+13)) = (mask))
+#define DIRECT_WRITE_HIGH(base, mask)   ((*((base)+12)) = (mask))
+
+#elif defined(__PIC32MX__)
+#define PIN_TO_BASEREG(pin)             (portModeRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*(base+4)) & (mask)) ? 1 : 0)  //PORTX + 0x10
+#define DIRECT_MODE_INPUT(base, mask)   ((*(base+2)) = (mask))            //TRISXSET + 0x08
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+1)) = (mask))            //TRISXCLR + 0x04
+#define DIRECT_WRITE_LOW(base, mask)    ((*(base+8+1)) = (mask))          //LATXCLR  + 0x24
+#define DIRECT_WRITE_HIGH(base, mask)   ((*(base+8+2)) = (mask))          //LATXSET + 0x28
+
+#elif defined(ARDUINO_ARCH_ESP8266)
+#define PIN_TO_BASEREG(pin)             (portOutputRegister(digitalPinToPort(pin)))
+#define PIN_TO_BITMASK(pin)             (digitalPinToBitMask(pin))
+#define IO_REG_TYPE uint32_t
+#define IO_REG_ASM
+#define DIRECT_READ(base, mask)         (((*(base+6)) & (mask)) ? 1 : 0)    //GPIO_IN_ADDRESS
+#define DIRECT_MODE_INPUT(base, mask)   ((*(base+5)) = (mask))              //GPIO_ENABLE_W1TC_ADDRESS
+#define DIRECT_MODE_OUTPUT(base, mask)  ((*(base+4)) = (mask))              //GPIO_ENABLE_W1TS_ADDRESS
+#define DIRECT_WRITE_LOW(base, mask)    ((*(base+2)) = (mask))              //GPIO_OUT_W1TC_ADDRESS
+#define DIRECT_WRITE_HIGH(base, mask)   ((*(base+1)) = (mask))              //GPIO_OUT_W1TS_ADDRESS
+
+#endif
+
 class RCSwitch {
 
   public:
@@ -117,18 +174,22 @@ class RCSwitch {
     int nPulseLength;
     int nRepeatTransmit;
     char nProtocol;
+	
+#ifdef IO_REG_TYPE
+	IO_REG_TYPE txBit;   // tx pin ports and bitmask
+	volatile IO_REG_TYPE *txReg;
+#endif
 
     static int nReceiveTolerance;
     static unsigned long nReceivedValue;
     static unsigned int nReceivedBitlength;
     static unsigned int nReceivedDelay;
     static unsigned int nReceivedProtocol;
+
     /* 
      * timings[0] contains sync timing, followed by a number of bits
      */
     static unsigned int timings[RCSWITCH_MAX_CHANGES];
-
-    
 };
 
 #endif

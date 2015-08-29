@@ -100,7 +100,13 @@ void RCSwitch::setReceiveTolerance(int nPercent) {
  */
 void RCSwitch::enableTransmit(int nTransmitterPin) {
   this->nTransmitterPin = nTransmitterPin;
-  pinMode(this->nTransmitterPin, OUTPUT);
+  if (this->nTransmitterPin >= 0)
+  {
+	pinMode(this->nTransmitterPin, OUTPUT);
+	
+	this->txBit = digitalPinToBitMask(this->nTransmitterPin);	// get tx pin ports and bitmask
+	this->txReg = PIN_TO_BASEREG(this->nTransmitterPin);		// get pointer to output register
+  }
 }
 
 /**
@@ -472,12 +478,22 @@ void RCSwitch::transmit(int nHighPulses, int nLowPulses) {
             this->disableReceive();
             disabled_Receive = true;
         }
-        digitalWrite(this->nTransmitterPin, HIGH);
+		
+	#ifdef DIRECT_WRITE_HIGH
+		DIRECT_WRITE_HIGH(this->txReg, this->txBit);
+	#else
+		digitalWrite(this->nTransmitterPin, HIGH);
+	#endif
         delayMicroseconds( this->nPulseLength * nHighPulses);
-        digitalWrite(this->nTransmitterPin, LOW);
+		
+	#ifdef DIRECT_WRITE_LOW
+		DIRECT_WRITE_LOW(this->txReg, this->txBit);
+	#else
+		digitalWrite(this->nTransmitterPin, LOW);
+	#endif
         delayMicroseconds( this->nPulseLength * nLowPulses);
         
-        if(disabled_Receive){
+        if(disabled_Receive) {
             this->enableReceive(nReceiverInterrupt_backup);
         }
     }

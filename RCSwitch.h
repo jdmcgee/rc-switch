@@ -1,6 +1,6 @@
 /*
   RCSwitch - Arduino libary for remote control outlet switches
-  Copyright (c) 2011 Suat Özgür.  All right reserved.
+  Copyright (c) 2011 Suat Ã–zgÃ¼r.  All right reserved.
 
   Contributors:
   - Andre Koehler / info(at)tomate-online(dot)de
@@ -36,13 +36,6 @@
     #include "WProgram.h"
 #endif
 
-
-// At least for the ATTiny X4/X5, receiving has to be disabled due to
-// missing libm depencies (udivmodhi4)
-#if defined( __AVR_ATtinyX5__ ) or defined ( __AVR_ATtinyX4__ )
-#define RCSwitchDisableReceiving
-#endif
-
 // Number of maximum High/Low changes per packet.
 // We can handle up to (unsigned long) => 32 bit * 2 H/L changes per bit + 2 for sync
 #define RCSWITCH_MAX_CHANGES 67
@@ -73,7 +66,6 @@ class RCSwitch {
     void send(unsigned long Code, unsigned int length);
     void send(char* Code);
     
-    #if not defined( RCSwitchDisableReceiving )
     void enableReceive(int interrupt);
     void enableReceive();
     void disableReceive();
@@ -85,15 +77,12 @@ class RCSwitch {
     unsigned int getReceivedDelay();
     unsigned int getReceivedProtocol();
     unsigned int* getReceivedRawdata();
-    #endif
   
     void enableTransmit(int nTransmitterPin);
     void disableTransmit();
     void setPulseLength(int nPulseLength);
     void setRepeatTransmit(int nRepeatTransmit);
-    #if not defined( RCSwitchDisableReceiving )
     void setReceiveTolerance(int nPercent);
-    #endif
     void setProtocol(int nProtocol);
     void setProtocol(int nProtocol, int nPulseLength);
   
@@ -114,25 +103,21 @@ class RCSwitch {
     static char* dec2binWzerofill(unsigned long dec, unsigned int length);
     static char* dec2binWcharfill(unsigned long dec, unsigned int length, char fill);
     
-    #if not defined( RCSwitchDisableReceiving )
     static void handleInterrupt();
     static bool receiveProtocol1(unsigned int changeCount);
     static bool receiveProtocol2(unsigned int changeCount);
     static bool receiveProtocol3(unsigned int changeCount);
     int nReceiverInterrupt;
-    #endif
     int nTransmitterPin;
     int nPulseLength;
     int nRepeatTransmit;
     char nProtocol;
 
-    #if not defined( RCSwitchDisableReceiving )
     static int nReceiveTolerance;
     static unsigned long nReceivedValue;
     static unsigned int nReceivedBitlength;
     static unsigned int nReceivedDelay;
     static unsigned int nReceivedProtocol;
-    #endif
     /* 
      * timings[0] contains sync timing, followed by a number of bits
      */

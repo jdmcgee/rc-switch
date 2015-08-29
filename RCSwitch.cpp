@@ -1,6 +1,6 @@
 /*
   RCSwitch - Arduino libary for remote control outlet switches
-  Copyright (c) 2011 Suat Özgür.  All right reserved.
+  Copyright (c) 2011 Suat Ã–zgÃ¼r.  All right reserved.
   
   Contributors:
   - Andre Koehler / info(at)tomate-online(dot)de
@@ -29,13 +29,11 @@
 
 #include "RCSwitch.h"
 
-#if not defined( RCSwitchDisableReceiving )
 unsigned long RCSwitch::nReceivedValue = NULL;
 unsigned int RCSwitch::nReceivedBitlength = 0;
 unsigned int RCSwitch::nReceivedDelay = 0;
 unsigned int RCSwitch::nReceivedProtocol = 0;
 int RCSwitch::nReceiveTolerance = 60;
-#endif
 unsigned int RCSwitch::timings[RCSWITCH_MAX_CHANGES];
 
 RCSwitch::RCSwitch() {
@@ -43,11 +41,9 @@ RCSwitch::RCSwitch() {
   this->setPulseLength(350);
   this->setRepeatTransmit(10);
   this->setProtocol(1);
-  #if not defined( RCSwitchDisableReceiving )
   this->nReceiverInterrupt = -1;
   this->setReceiveTolerance(60);
   RCSwitch::nReceivedValue = NULL;
-  #endif
 }
 
 /**
@@ -92,11 +88,9 @@ void RCSwitch::setRepeatTransmit(int nRepeatTransmit) {
 /**
  * Set Receiving Tolerance
  */
-#if not defined( RCSwitchDisableReceiving )
 void RCSwitch::setReceiveTolerance(int nPercent) {
   RCSwitch::nReceiveTolerance = nPercent;
 }
-#endif
   
 
 /**
@@ -471,27 +465,21 @@ void RCSwitch::send(char* sCodeWord) {
 }
 
 void RCSwitch::transmit(int nHighPulses, int nLowPulses) {
-    #if not defined ( RCSwitchDisableReceiving )
     boolean disabled_Receive = false;
     int nReceiverInterrupt_backup = nReceiverInterrupt;
-    #endif
     if (this->nTransmitterPin != -1) {
-        #if not defined( RCSwitchDisableReceiving )
         if (this->nReceiverInterrupt != -1) {
             this->disableReceive();
             disabled_Receive = true;
         }
-        #endif
         digitalWrite(this->nTransmitterPin, HIGH);
         delayMicroseconds( this->nPulseLength * nHighPulses);
         digitalWrite(this->nTransmitterPin, LOW);
         delayMicroseconds( this->nPulseLength * nLowPulses);
         
-        #if not defined( RCSwitchDisableReceiving )
         if(disabled_Receive){
             this->enableReceive(nReceiverInterrupt_backup);
         }
-        #endif
     }
 }
 /**
@@ -583,7 +571,6 @@ void RCSwitch::sendSync() {
     }
 }
 
-#if not defined( RCSwitchDisableReceiving )
 /**
  * Enable receiving data
  */
@@ -789,7 +776,6 @@ void RCSwitch::handleInterrupt() {
   RCSwitch::timings[changeCount++] = duration;
   lastTime = time;  
 }
-#endif
 
 /**
   * Turns a decimal value to its binary representation
@@ -818,6 +804,4 @@ char* RCSwitch::dec2binWcharfill(unsigned long Dec, unsigned int bitLength, char
   
   return bin;
 }
-
-
 
